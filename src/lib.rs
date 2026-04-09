@@ -77,6 +77,38 @@ pub fn derive_has_name(input: TokenStream) -> TokenStream {
     })
 }
 
+// ─── HasParentId ──────────────────────────────────────────────────────────────
+//
+// Generates:
+//   impl HasParentId for T {
+//       fn get_parent_id(&self) -> Option<String> { self.<field>.clone() }
+//   }
+//
+// Defaults to the field named `parent_id`. Override with
+// #[has_parent_id(field = "other")].
+//
+// Example:
+//   #[derive(HasParentId)]
+//   pub struct UserStore { pub parent_id: Option<String>, ... }
+
+#[proc_macro_derive(HasParentId, attributes(has_parent_id))]
+pub fn derive_has_parent_id(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let name = &input.ident;
+
+    let field_name = find_attribute_field(&input.attrs, "has_parent_id")
+        .unwrap_or_else(|| "parent_id".to_string());
+    let field = syn::Ident::new(&field_name, Span::call_site());
+
+    TokenStream::from(quote! {
+        impl HasParentId for #name {
+            fn get_parent_id(&self) -> Option<String> {
+                self.#field.clone()
+            }
+        }
+    })
+}
+
 // ─── FormModel ────────────────────────────────────────────────────────────────
 //
 // Generates a companion `{Struct}FormModel` with every field wrapped in
